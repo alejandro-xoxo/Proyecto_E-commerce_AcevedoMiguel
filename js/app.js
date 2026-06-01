@@ -264,7 +264,7 @@
 
     // Initialize categories UI where applicable (public filters)
     if (imports.categories && typeof imports.categories.populateCategoryFilters === 'function') {
-      try { imports.categories.populateCategoryFilters('#category-filter .filter-list'); } catch (e) {}
+      try { imports.categories.populateCategoryFilters('#category-filter'); } catch (e) {}
     }
 
     // Initialize products UI
@@ -277,7 +277,13 @@
         } else if (page === 'product-detail.html' && typeof imports.products.renderProducts === 'function') {
           const params = new URLSearchParams(window.location.search);
           const id = params.get('id');
-          if (id) imports.products.renderProducts({ mode: 'related', relatedToId: id, limit: 4, target: '#related-products-grid' });
+          if (id) {
+            imports.products.renderProducts({ mode: 'related', relatedToId: id, limit: 4, target: '#related-products-grid' });
+            if (typeof imports.products.initProductsUI === 'function') {
+              // initialize event listeners (view/add) without re-rendering the grid
+              try { imports.products.initProductsUI({ defaultRender: false }); } catch (e) { console.error(e); }
+            }
+          }
         }
       } catch (e) { console.error('Failed to initialize products UI', e); }
     }

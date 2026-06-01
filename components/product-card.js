@@ -118,10 +118,26 @@ class ProductCard extends HTMLElement {
     }
   }
 
+  _resolveImagePath(value) {
+    if (!value) return '';
+    const trimmed = String(value).trim();
+    if (trimmed.startsWith('http') || trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+      return trimmed;
+    }
+    if (window.location.pathname.includes('/screens/')) {
+      return `../${trimmed}`;
+    }
+    return trimmed;
+  }
+
   updateImage(value) {
-    const imageSrc = value ? value.trim() : '';
-    this.imageEl.src = imageSrc;
+    const imageSrc = this._resolveImagePath(value);
+    this.imageEl.src = imageSrc || (window.location.pathname.includes('/screens/') ? '../img/hoddie.png' : 'img/hoddie.png');
     this.imageEl.alt = this.getAttribute('name') ? this.getAttribute('name').trim() : 'Product image';
+    this.imageEl.onerror = () => {
+      this.imageEl.onerror = null;
+      this.imageEl.src = window.location.pathname.includes('/screens/') ? '../img/hoddie.png' : 'img/hoddie.png';
+    };
   }
 
   updateTitle(value) {

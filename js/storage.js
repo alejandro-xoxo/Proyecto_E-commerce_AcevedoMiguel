@@ -40,7 +40,7 @@ const DEFAULT_PRODUCTS = [
     name: 'Shadow Oversize Tee',
     category: 'tops',
     price: 49.0,
-    image: 'img/product-03.jpg',
+    image: 'img/hoddie.png',
     description: 'Soft cotton tee with a dropped shoulder and minimal branding.',
     stock: 20,
     sizes: ['S', 'M', 'L', 'XL'],
@@ -110,12 +110,18 @@ class StorageManager {
   }
 
   getCart() {
+    const fallbackCart = this._get('cart', null);
+    if (Array.isArray(fallbackCart)) {
+      return fallbackCart;
+    }
     return this._get(STORAGE_KEYS.cart, []);
   }
 
   saveCart(cart) {
     this._validateArray(cart, 'cart');
-    this._save(STORAGE_KEYS.cart, cart);
+    const normalized = Array.isArray(cart) ? cart : [];
+    this._save('cart', normalized);
+    this._save(STORAGE_KEYS.cart, normalized);
   }
 
   getSession() {
