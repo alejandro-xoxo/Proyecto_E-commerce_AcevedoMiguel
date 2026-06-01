@@ -19,6 +19,18 @@ function _formatPrice(value) {
     return Number(value || 0).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
+function _resolveImagePath(src) {
+    if (!src) return '';
+    const value = String(src).trim();
+    if (value.startsWith('http') || value.startsWith('/') || value.startsWith('./') || value.startsWith('../')) {
+        return value;
+    }
+    if (window.location.pathname.includes('/screens/')) {
+        return `../${value}`;
+    }
+    return value;
+}
+
 function _getCartItems() {
     if (typeof window === 'undefined' || typeof window.localStorage === 'undefined') {
         return [];
@@ -99,15 +111,15 @@ function _updateCartItemQuantity(itemKey, delta) {
 }
 
 function updateCartView() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
+    const cart = _getCartItems();
     const container = document.getElementById('cart-items-container');
 
     if (!container) return;
 
     if (!Array.isArray(cart) || cart.length === 0) {
         container.innerHTML = '<p>TU CARRITO ESTÁ VACÍO</p>';
-        if (summarySubtotalValue) summarySubtotalValue.textContent = '$0.00';
-        if (summaryTotalValue) summaryTotalValue.textContent = '$0.00';
+        if (summarySubtotalValue) summarySubtotalValue.textContent = _formatPrice(0);
+        if (summaryTotalValue) summaryTotalValue.textContent = _formatPrice(0);
         if (summaryItemsCount) summaryItemsCount.textContent = '0';
         if (checkoutSection) checkoutSection.classList.add('hidden');
         if (orderSummaryBox) orderSummaryBox.classList.add('hidden');
@@ -124,7 +136,7 @@ function updateCartView() {
 
     container.innerHTML = cart.map(product => {
         const itemKey = _getCartItemKey(product);
-        const img = product.url_imagen || product.image || '';
+        const img = _resolveImagePath(product.url_imagen || product.image || '');
         const name = product.name || product.nombre || '';
         const price = Number(product.price || product.precio || 0);
         const qty = Number(product.quantity || product.qty || product.cantidad || 1);
@@ -157,15 +169,12 @@ function updateCartView() {
         `;
     }).join('');
 
-    const total = cart.reduce((sum, product) => {
-        const quantity = Number(product.qty || product.quantity || product.cantidad || 1);
-        const price = Number(product.price || product.precio || 0);
-        return sum + price * quantity;
-    }, 0);
+    const total = _getCartTotal(cart);
+    const itemCount = cart.reduce((sum, item) => sum + Number(item.qty || item.quantity || item.cantidad || 1), 0);
 
     if (summarySubtotalValue) summarySubtotalValue.textContent = _formatPrice(total);
     if (summaryTotalValue) summaryTotalValue.textContent = _formatPrice(total);
-    if (summaryItemsCount) summaryItemsCount.textContent = String(cart.reduce((sum, item) => sum + Number(item.qty || item.quantity || item.cantidad || 1), 0));
+    if (summaryItemsCount) summaryItemsCount.textContent = String(itemCount);
 }
 
 function _renderSummary(items) {
@@ -278,36 +287,51 @@ function _handleCheckoutSubmit(event) {
         total
     };
 
-    let orders = [];
-    try {
-        const rawOrders = window.localStorage.getItem('orders');
-        if (rawOrders) {
-            const parsedOrders = JSON.parse(rawOrders);
-            if (Array.isArray(parsedOrders)) {
-                orders = parsedOrders;
-            }
-        }
-    } catch (error) {
-        console.warn('Error leyendo orders desde localStorage', error);
+    const storage = (typeof window !== 'undefined' && typeof window.StorageManager === 'function') ? new window.StorageManager(window.localStorage) : null;
+    const orders = storage ? storage.getOrders() : [];
+    const orderDate = new Date().toISOString();
+    const orderId = `ORD-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const orderPayload = {
+        id: orderId,
+        date: orderDate,
+        customer: cliente.nombre,
+        email: cliente.email,
+        phone: cliente.telefono,
+        address: cliente.direccion,
+        items: cartItems.map(item => ({
+            productId: item.id || item.productId || '',
+            name: item.name || item.nombre || '',
+            qty: Number(item.quantity || item.qty || item.cantidad || 1),
+            price: Number(item.price || item.precio || 0),
+            subtotal: Number(item.price || item.precio || 0) * Number(item.quantity || item.qty || item.cantidad || 1),
+            image: item.image || item.url_imagen || '',
+            meta: `${item.size || ''}${item.size && item.color ? ' / ' : ''}${item.color || ''}`
+        })),
+        total,
+        status: 'pending',
+        meta: { idNumber: cliente.id }
+    };
+
+    const nextOrders = storage ? [orderPayload, ...orders] : [orderPayload];
+
+    if (storage && typeof storage.saveOrders === 'function') {
+        storage.saveOrders(nextOrders);
     }
 
-    orders.push(nuevoPedido);
-
     try {
-        window.localStorage.setItem('orders', JSON.stringify(orders));
+        window.localStorage.setItem('orders', JSON.stringify(nextOrders));
     } catch (error) {
-        console.error('No se pudo guardar el pedido en localStorage.', error);
-        alert('No se pudo almacenar el pedido. Intenta de nuevo.');
-        return;
+        console.warn('No se pudo sincronizar localStorage.orders', error);
     }
 
     _saveCartItems([]);
     alert('Pedido generado');
-    window.location.href = '../index.html';
+    const inScreens = window.location.pathname.includes('/screens/');
+    window.location.href = inScreens ? 'orders.html' : '../screens/orders.html';
 }
 
 function initCartPage() {
-    if (checkoutForm) {
+    if (checkoutForm && !window.ORDERS_MODULE_LOADED) {
         checkoutForm.addEventListener('submit', _handleCheckoutSubmit);
     }
     if (cartItemsContainer) {

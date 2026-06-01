@@ -20,6 +20,18 @@ function _formatPrice(value) {
 	return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 }
 
+function _resolveImagePath(src) {
+	if (!src) return '';
+	const trimmed = String(src).trim();
+	if (trimmed.startsWith('http') || trimmed.startsWith('/') || trimmed.startsWith('../') || trimmed.startsWith('./')) {
+		return trimmed;
+	}
+	if (window.location.pathname.includes('/screens/')) {
+		return `../${trimmed}`;
+	}
+	return trimmed;
+}
+
 function _generateId(prefix = 'AET') {
 	const products = storage.getProducts();
 	const nums = products
@@ -79,20 +91,45 @@ function getProductById(id) {
 
 function _createProductCardEl(product) {
 	const el = document.createElement('product-card');
+	const categoryId = String(product.category || '').trim();
+	const category = storage.getCategories().find(c => String(c.id) === categoryId);
+	const categoryLabel = category ? category.name : (product.category || '');
 	el.setAttribute('product-id', product.id);
 	el.setAttribute('name', product.name || 'Untitled');
 	el.setAttribute('price', _formatPrice(product.price));
-	el.setAttribute('image', product.image || '../img/product-01.jpg');
-	el.setAttribute('category', product.category || '');
+	el.setAttribute('image', _resolveImagePath(product.image || '../img/product-01.jpg'));
+	el.setAttribute('category', categoryLabel);
 	return el;
 }
 
-function renderProducts() {
-	const container = document.querySelector('#products-grid');
+function _filterProducts(products = [], { category, query } = {}) {
+	const normalizedQuery = String(query || '').trim().toLowerCase();
+	return (products || []).filter(product => {
+		const productCategory = String(product.category || product.id_categoria || '').trim();
+		const categoryMatches = category ? productCategory === String(category).trim() : true;
+		const searchableText = [product.name, product.description, product.id, product.sku, productCategory]
+			.map(value => String(value || '').toLowerCase())
+			.join(' ');
+		const queryMatches = normalizedQuery ? searchableText.includes(normalizedQuery) : true;
+		return categoryMatches && queryMatches;
+	});
+}
+
+function renderProducts({ filters = {}, query = '', target = '#products-grid' } = {}) {
+	const container = document.querySelector(target);
 	if (!container) return { rendered: 0, results: [] };
 
-	const products = storage.getProducts();
+	const products = _filterProducts(storage.getProducts(), { category: filters.category, query });
 	container.innerHTML = '';
+
+	if (!products.length) {
+		const empty = document.createElement('p');
+		empty.textContent = 'No hay productos disponibles para estos filtros.';
+		empty.className = 'empty-state';
+		container.appendChild(empty);
+		return { rendered: 0, results: [] };
+	}
+
 	products.forEach(p => {
 		const card = _createProductCardEl(p);
 		container.appendChild(card);
@@ -105,6 +142,13 @@ function renderProducts() {
 function initProductsUI({ defaultRender = true } = {}) {
 	if (defaultRender) {
 		renderProducts();
+	}
+
+	const searchInput = document.querySelector('#public-search-input');
+	if (searchInput) {
+		searchInput.addEventListener('input', (ev) => {
+			renderProducts({ query: String(ev.target.value || '').trim() });
+		});
 	}
 
 	// Delegate view-product events to navigate to product-detail with id param

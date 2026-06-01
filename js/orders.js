@@ -11,6 +11,9 @@ function _getStorage() {
 }
 
 const storage = _getStorage();
+if (typeof window !== 'undefined') {
+  window.ORDERS_MODULE_LOADED = true;
+}
 
 function _generateOrderId() {
   const orders = storage.getOrders();

@@ -8,8 +8,8 @@
     <meta name="description" content="Explora la colección completa de AETHON. Streetwear premium, prendas utilitarias y diseño de vanguardia.">
     
     <link rel="stylesheet" href="../css/utils.css">
-    <link rel="stylesheet" href="../css/products.css">
     <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="../css/products.css">
 </head>
 <body>
 
@@ -20,15 +20,15 @@
     <header id="main-header" class="header">
         <div class="header__container container">
             
-            <a href="index.html" class="header__logo">
+            <a href="../index.html" class="header__logo">
                 <h1>AETHON</h1>
             </a>
             
             <nav id="main-nav" class="header__nav">
                 <ul class="header__menu">
-                    <li class="active"><a href="index.html">INICIO</a></li>
-                    <li><a href="screens/products.html">COLECCIÓN</a></li>
-                    <li><a href="screens/categories.html">CATEGORÍAS</a></li>
+                    <li class="active"><a href="../index.html">INICIO</a></li>
+                    <li><a href="products.html">COLECCIÓN</a></li>
+                    <li><a href="categories.html">CATEGORÍAS</a></li>
                     <li><a href="#brand-story">ACERCA DE</a></li>
                     <li><a href="#footer">CONTACTO</a></li>
                 </ul>
@@ -39,8 +39,8 @@
                     <button class="lang-btn active">ES</button> / <button class="lang-btn">EN</button>
                 </div>
                 <button id="nav-search-btn" class="header__action-btn" aria-label="Buscar">BUSCAR</button>
-                <a href="screens/login.html" id="nav-login-btn" class="header__action-btn">CUENTA</a>
-                <a href="screens/cart.html" id="nav-cart-btn" class="header__action-btn">CARRITO (0)</a>
+                <a href="login.html" id="nav-login-btn" class="header__action-btn">CUENTA</a>
+                <a href="cart.html" id="nav-cart-btn" class="header__action-btn">CARRITO (0)</a>
             </div>
 
         </div>
@@ -56,6 +56,18 @@
                 <span class="collection-hero__subtitle">NUEVA COLECCIÓN 2026</span>
                 <h2 class="collection-hero__title">BEYOND ORDINARY</h2>
                 <a href="#products-grid" class="btn btn--outline">DESCUBRE LA COLECCIÓN</a>
+            </div>
+        </section>
+
+        <section class="catalog-toolbar container">
+            <div class="catalog-toolbar__inner">
+                <div class="catalog-toolbar__search">
+                    <input id="public-search-input" type="search" class="input-dark input-full" placeholder="Buscar producto...">
+                </div>
+                <div class="catalog-toolbar__filters">
+                    <span class="filter-label">Filtrar por categoría:</span>
+                    <ul id="category-filter" class="filter-list"></ul>
+                </div>
             </div>
         </section>
 
@@ -83,7 +95,7 @@
                     <ul class="footer__links">
                         <li><a href="mailto:info@aethon.com">info@aethon.com</a></li>
                         <li><a href="https://wa.me/573000000000" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-                        <li><a href="screens/orders.html">Seguimiento de Órdenes</a></li>
+                        <li><a href="orders.html">Seguimiento de Órdenes</a></li>
                     </ul>
                 </div>
 

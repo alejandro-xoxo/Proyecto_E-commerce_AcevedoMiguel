@@ -59,7 +59,7 @@ function redirectIfLogged() {
 function redirectIfNotLogged() {
   const session = checkSession();
   // Only admin pages are protected
-  const protectedFiles = ['dashboard.html', 'orders.html', 'categories.html'];
+  const protectedFiles = ['dashboard.html', 'orders.html', 'categories.html', 'admin-products.html'];
   const currentFile = location.pathname.split('/').pop();
   if (!session && protectedFiles.includes(currentFile)) {
     location.assign(_resolvePath('login.html'));

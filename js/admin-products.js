@@ -18,18 +18,30 @@ function _formatPrice(value) {
     return Number(value).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
 }
 
+function _resolveImagePath(value) {
+    const imagePath = String(value || '').trim();
+    if (!imagePath || imagePath === '#') return '#';
+    if (/^(https?:\/\/|\/)/i.test(imagePath)) {
+        return imagePath;
+    }
+    if (window.location.pathname.includes('/screens/')) {
+        return imagePath.startsWith('../') ? imagePath : `../${imagePath}`;
+    }
+    return imagePath;
+}
+
 function _getCategories() {
     return storage.getCategories() || [];
 }
 
 function _getProductValues() {
     return {
-        codigo: productForm.codigo.value.trim(),
-        nombre: productForm.nombre.value.trim(),
-        id_categoria: productForm.id_categoria.value.trim(),
-        precio: Number(productForm.precio.value) || 0,
-        url_imagen: productForm.url_imagen.value.trim(),
-        descripcion: productForm.descripcion.value.trim()
+        id: productForm.codigo.value.trim(),
+        name: productForm.nombre.value.trim(),
+        category: productForm.id_categoria.value.trim(),
+        price: Number(productForm.precio.value) || 0,
+        image: productForm.url_imagen.value.trim(),
+        description: productForm.descripcion.value.trim()
     };
 }
 
@@ -43,16 +55,20 @@ function _openModal(product = null) {
 
     if (product) {
         modalTitle.textContent = 'Editar Producto';
-        productForm.codigo.value = product.codigo;
-        productForm.nombre.value = product.nombre;
-        productForm.id_categoria.value = product.id_categoria;
-        productForm.precio.value = product.precio;
-        productForm.url_imagen.value = product.url_imagen;
-        productForm.descripcion.value = product.descripcion;
-        productForm.dataset.editing = product.codigo;
+        productForm.codigo.value = product.id || product.codigo || '';
+        productForm.nombre.value = product.name || product.nombre || '';
+        productForm.id_categoria.value = product.category || product.id_categoria || '';
+        productForm.precio.value = product.price || product.precio || 0;
+        productForm.url_imagen.value = product.image || product.url_imagen || '';
+        productForm.descripcion.value = product.description || product.descripcion || '';
+        productForm.dataset.editing = product.id || product.codigo || '';
     } else {
         modalTitle.textContent = 'Agregar Producto';
         _resetForm();
+    }
+
+    if (productModal.classList.contains('hidden')) {
+        productModal.classList.remove('hidden');
     }
 
     if (typeof productModal.showModal === 'function') {
@@ -68,6 +84,9 @@ function _closeModal() {
         productModal.close();
     } else {
         productModal.removeAttribute('open');
+    }
+    if (!productModal.classList.contains('hidden')) {
+        productModal.classList.add('hidden');
     }
     _resetForm();
 }
@@ -91,17 +110,19 @@ function _renderProducts() {
 
     products.forEach(product => {
         const row = document.createElement('tr');
-        row.dataset.codigo = product.codigo;
+        const productId = product.id || product.codigo || '';
+        row.dataset.id = productId;
 
+        const imageUrl = _resolveImagePath(product.image || product.url_imagen || '#');
         row.innerHTML = `
-            <td>${product.codigo}</td>
-            <td>${product.nombre}</td>
-            <td>${categoryMap[product.id_categoria] || product.id_categoria}</td>
-            <td>${_formatPrice(product.precio)}</td>
-            <td><a href="${product.url_imagen}" target="_blank" rel="noopener">Ver imagen</a></td>
+            <td>${productId}</td>
+            <td>${product.name || product.nombre || ''}</td>
+            <td>${categoryMap[product.category || product.id_categoria] || product.category || product.id_categoria || ''}</td>
+            <td>${_formatPrice(product.price || product.precio)}</td>
+            <td><a href="${imageUrl}" target="_blank" rel="noopener">Ver imagen</a></td>
             <td>
-                <button type="button" class="btn btn--sm btn--outline btn-edit-product" data-codigo="${product.codigo}">Editar</button>
-                <button type="button" class="btn btn--sm btn--danger btn-delete-product" data-codigo="${product.codigo}">Eliminar</button>
+                <button type="button" class="btn btn--sm btn--outline btn-edit-product" data-id="${productId}">Editar</button>
+                <button type="button" class="btn btn--sm btn--danger btn-delete-product" data-id="${productId}">Eliminar</button>
             </td>
         `;
 
@@ -128,17 +149,17 @@ function _handleFormSubmit(event) {
 
     try {
         const product = _getProductValues();
-        if (!product.codigo || !product.nombre || !product.id_categoria || !product.url_imagen || !product.descripcion) {
+        if (!product.id || !product.name || !product.category || !product.image || !product.description) {
             alert('Completa todos los campos antes de guardar.');
             return;
         }
 
-        const originalCodigo = productForm.dataset.editing;
-        const isEditing = Boolean(originalCodigo);
+        const originalId = productForm.dataset.editing;
+        const isEditing = Boolean(originalId);
 
         storage.saveProduct(product);
-        if (isEditing && originalCodigo && originalCodigo !== product.codigo) {
-            storage.deleteProduct(originalCodigo);
+        if (isEditing && originalId && originalId !== product.id) {
+            storage.deleteProduct(originalId);
         }
 
         _renderProducts();
@@ -155,9 +176,9 @@ function _handleTableClick(event) {
     const deleteButton = event.target.closest('.btn-delete-product');
 
     if (editButton) {
-        const codigo = editButton.dataset.codigo;
+        const productId = editButton.dataset.id;
         const products = storage.getProducts();
-        const product = products.find(item => item.codigo === codigo);
+        const product = products.find(item => item.id === productId || item.codigo === productId);
         if (product) {
             _openModal(product);
         }
@@ -165,13 +186,13 @@ function _handleTableClick(event) {
     }
 
     if (deleteButton) {
-        const codigo = deleteButton.dataset.codigo;
-        if (!codigo) return;
+        const productId = deleteButton.dataset.id;
+        if (!productId) return;
 
         const confirmed = confirm('¿Seguro que deseas eliminar este producto?');
         if (!confirmed) return;
 
-        storage.deleteProduct(codigo);
+        storage.deleteProduct(productId);
         _renderProducts();
         alert('Producto eliminado correctamente.');
     }
@@ -187,6 +208,10 @@ function initAdminProducts() {
 
     addProductButton.addEventListener('click', () => _openModal());
     modalCloseButton.addEventListener('click', _closeModal);
+    const cancelProductButton = document.getElementById('btn-cancel-product');
+    if (cancelProductButton) {
+        cancelProductButton.addEventListener('click', _closeModal);
+    }
     productForm.addEventListener('submit', _handleFormSubmit);
     productsTableBody.addEventListener('click', _handleTableClick);
 
