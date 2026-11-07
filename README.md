@@ -1,6 +1,6 @@
 # 🛒 Proyecto E-Commerce: Expansión Digital — AETHON
 
-🔗 **Enlace de Producción (GitHub Pages):** [Casi lo temino >:( ... ](https://alejandro-xoxo.github.io/Proyecto_E-commerce_AcevedoMiguel/)  
+🔗 **Enlace de Producción (GitHub Pages):** [https://alejandro-xoxo.github.io/Proyecto_E-commerce_AcevedoMiguel/](https://alejandro-xoxo.github.io/Proyecto_E-commerce_AcevedoMiguel/)  
 📁 **Repositorio:** `Proyecto_E-commerce_AcevedoMiguel`
 
 ## 📝 Descripción del Proyecto
