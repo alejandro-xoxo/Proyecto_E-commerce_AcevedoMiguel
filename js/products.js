@@ -97,7 +97,7 @@ function _createProductCardEl(product) {
 	el.setAttribute('product-id', product.id);
 	el.setAttribute('name', product.name || 'Untitled');
 	el.setAttribute('price', _formatPrice(product.price));
-	el.setAttribute('image', _resolveImagePath(product.image || '../img/product-01.jpg'));
+	el.setAttribute('image', _resolveImagePath(product.image || 'img/hoddie.png'));
 	el.setAttribute('category', categoryLabel);
 	return el;
 }

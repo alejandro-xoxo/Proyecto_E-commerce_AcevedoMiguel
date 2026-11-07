@@ -165,7 +165,7 @@ function initCategoriesAdmin({ tableSelector = '#categories-tbody', filterSelect
       }
       if (del) {
         const id = del.getAttribute('data-id');
-        if (!confirm('Eliminar categoría y desvincular productos?')) return;
+        if (!confirm('¿Eliminar categoría y desvincular productos?')) return;
         deleteCategory(id);
         renderCategoriesTable(tableSelector);
         populateCategoryFilters(filterSelector);
